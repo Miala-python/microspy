@@ -1,8 +1,3 @@
-function someone () {
-    if (!(music.isSoundPlaying())) {
-        music.play(music.stringPlayable("E B E A E G E F ", 200), music.PlaybackMode.LoopingInBackground)
-    }
-}
 // 8 => PIR Motion Sensor
 // 1; 2 => Ultrasonic Module
 let son_à_stopper_ = false
@@ -21,14 +16,18 @@ PingUnit.Centimeters
 basic.forever(function () {
     if (loaded) {
         if (1 == pins.digitalReadPin(DigitalPin.P8)) {
-            someone()
+            if (!(music.isSoundPlaying())) {
+                music.play(music.stringPlayable("E B E A E G E F ", 200), music.PlaybackMode.LoopingInBackground)
+            }
         } else {
             if (10 < Math.abs(dist_OK - sonar.ping(
             DigitalPin.P2,
             DigitalPin.P1,
             PingUnit.Centimeters
             ))) {
-                someone()
+                if (!(music.isSoundPlaying())) {
+                    music.play(music.stringPlayable("B A C5 A B C5 B A ", 200), music.PlaybackMode.LoopingInBackground)
+                }
             }
         }
         if (input.buttonIsPressed(Button.AB)) {
