@@ -3,9 +3,9 @@
     "description": "",
     "dependencies": {
         "core": "*",
-        "radio": "*",
         "microphone": "*",
-        "pxt-sonar": "github:microsoft/pxt-sonar#v0.0.5"
+        "pxt-sonar": "github:microsoft/pxt-sonar#v0.0.5",
+        "bluetooth": "*"
     },
     "files": [
         "main.blocks",
