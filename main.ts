@@ -1,5 +1,23 @@
+function Intrusion (Detecteur: string) {
+    bluetooth.uartWriteLine("INTRUSION: " + Detecteur)
+    son_à_stopper_ = true
+}
+input.onButtonPressed(Button.AB, function () {
+    music.stopAllSounds()
+    detect = false
+    basic.pause(10000)
+    music.play(music.builtinPlayableSoundEffect(soundExpression.hello), music.PlaybackMode.UntilDone)
+    dist_OK = sonar.ping(
+    DigitalPin.P2,
+    DigitalPin.P1,
+    PingUnit.Centimeters
+    )
+    detect = true
+})
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
-    if ("zelda" == bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))) {
+    bluetooth.uartWriteLine("CHECKED: " + bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine)))
+    bt_reçu = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine)).split(".")
+    if ("mus" == bt_reçu[0]) {
         music.play(music.tonePlayable(262, music.beat(BeatFraction.Double)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(196, music.beat(BeatFraction.Whole)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(262, music.beat(BeatFraction.Quarter)), music.PlaybackMode.UntilDone)
@@ -7,12 +25,21 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
         music.play(music.tonePlayable(330, music.beat(BeatFraction.Quarter)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(349, music.beat(BeatFraction.Quarter)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(392, music.beat(BeatFraction.Breve)), music.PlaybackMode.UntilDone)
+    } else if ("dtc" == bt_reçu[0]) {
+        if ("on" == bt_reçu[1]) {
+            detect = true
+        } else if ("off" == bt_reçu[1]) {
+            detect = false
+        }
     }
 })
 // 8 => PIR Motion Sensor
 // 1; 2 => Ultrasonic Module
+let bt_reçu: string[] = []
 let son_à_stopper_ = false
-let loaded = false
+let dist_OK = 0
+let detect = false
+detect = false
 bluetooth.startUartService()
 let bt_i = 0
 led.enable(false)
@@ -20,51 +47,42 @@ pins.digitalWritePin(DigitalPin.P8, 0)
 music._playDefaultBackground(music.builtInPlayableMelody(Melodies.PowerUp), music.PlaybackMode.UntilDone)
 basic.pause(2000)
 music.play(music.builtinPlayableSoundEffect(soundExpression.hello), music.PlaybackMode.UntilDone)
-loaded = true
-let dist_OK = sonar.ping(
+detect = true
+dist_OK = sonar.ping(
 DigitalPin.P2,
 DigitalPin.P1,
 PingUnit.Centimeters
 )
-loops.everyInterval(1000, function () {
+loops.everyInterval(10000, function () {
     bt_i += 1
     bluetooth.uartWriteNumber(bt_i)
     bluetooth.uartWriteLine("")
 })
 basic.forever(function () {
-    if (loaded) {
+    if (detect) {
+        if (music.volume() < 255) {
+            music.setVolume(music.volume() + 25)
+        }
         if (1 == pins.digitalReadPin(DigitalPin.P8)) {
-            if (!(music.isSoundPlaying())) {
-                music.play(music.stringPlayable("E B E A E G E F ", 200), music.PlaybackMode.LoopingInBackground)
-                bluetooth.uartWriteString("INTRUSION Mouvement !")
-            }
+            music.play(music.stringPlayable("E B E A E G E F ", 200), music.PlaybackMode.UntilDone)
+            Intrusion("Mouvement IR")
         } else {
             if (10 < Math.abs(dist_OK - sonar.ping(
             DigitalPin.P2,
             DigitalPin.P1,
             PingUnit.Centimeters
             ))) {
-                if (!(music.isSoundPlaying())) {
-                    music.play(music.stringPlayable("B A C5 A B C5 B A ", 200), music.PlaybackMode.LoopingInBackground)
-                    bluetooth.uartWriteString("INTRUSION Sonar !")
-                }
+                music.play(music.stringPlayable("B A C5 A B C5 B A ", 200), music.PlaybackMode.UntilDone)
+                Intrusion("Sonar")
+            } else {
+                music.setVolume(105)
             }
-        }
-        if (input.buttonIsPressed(Button.AB)) {
-            music.stopAllSounds()
-            basic.pause(10000)
-            music.play(music.builtinPlayableSoundEffect(soundExpression.hello), music.PlaybackMode.UntilDone)
-            dist_OK = sonar.ping(
-            DigitalPin.P2,
-            DigitalPin.P1,
-            PingUnit.Centimeters
-            )
         }
     }
 })
-loops.everyInterval(7000, function () {
+loops.everyInterval(5000, function () {
     if (son_à_stopper_) {
         music.stopAllSounds()
+        son_à_stopper_ = false
     }
-    son_à_stopper_ = music.isSoundPlaying()
 })
