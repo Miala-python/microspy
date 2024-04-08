@@ -15,9 +15,9 @@ input.onButtonPressed(Button.AB, function () {
     detect = true
 })
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
-    bluetooth.uartWriteLine("CHECKED: " + bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine)))
-    bt_reçu = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine)).split(".")
-    if ("mus" == bt_reçu[0]) {
+    bt_reçu = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
+    bluetooth.uartWriteLine("CHECKED: " + "Monde")
+    if (bt_reçu.includes("mus")) {
         music.play(music.tonePlayable(262, music.beat(BeatFraction.Double)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(196, music.beat(BeatFraction.Whole)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(262, music.beat(BeatFraction.Quarter)), music.PlaybackMode.UntilDone)
@@ -25,17 +25,24 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
         music.play(music.tonePlayable(330, music.beat(BeatFraction.Quarter)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(349, music.beat(BeatFraction.Quarter)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(392, music.beat(BeatFraction.Breve)), music.PlaybackMode.UntilDone)
-    } else if ("dtc" == bt_reçu[0]) {
-        if ("on" == bt_reçu[1]) {
+    } else if (bt_reçu.includes("dtc")) {
+        if (bt_reçu.includes("on")) {
             detect = true
-        } else if ("off" == bt_reçu[1]) {
+        } else if (bt_reçu.includes("off")) {
             detect = false
+        }
+    } else if (bt_reçu.includes("rec")) {
+        if (bt_reçu.includes("on")) {
+            record.startRecording(record.BlockingState.Blocking)
+        } else if (bt_reçu.includes("play")) {
+            record.playAudio(record.BlockingState.Blocking)
         }
     }
 })
 // 8 => PIR Motion Sensor
 // 1; 2 => Ultrasonic Module
-let bt_reçu: string[] = []
+let dist = 0
+let bt_reçu = ""
 let son_à_stopper_ = false
 let dist_OK = 0
 let detect = false
@@ -67,11 +74,12 @@ basic.forever(function () {
             music.play(music.stringPlayable("E B E A E G E F ", 200), music.PlaybackMode.UntilDone)
             Intrusion("Mouvement IR")
         } else {
-            if (10 < Math.abs(dist_OK - sonar.ping(
+            dist = sonar.ping(
             DigitalPin.P2,
             DigitalPin.P1,
             PingUnit.Centimeters
-            ))) {
+            )
+            if (dist > 10 && dist < 400 && 10 < Math.abs(dist_OK - dist)) {
                 music.play(music.stringPlayable("B A C5 A B C5 B A ", 200), music.PlaybackMode.UntilDone)
                 Intrusion("Sonar")
             } else {

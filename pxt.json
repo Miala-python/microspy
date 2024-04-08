@@ -5,7 +5,8 @@
         "core": "*",
         "microphone": "*",
         "pxt-sonar": "github:microsoft/pxt-sonar#v0.0.5",
-        "bluetooth": "*"
+        "bluetooth": "*",
+        "audio-recording": "*"
     },
     "files": [
         "main.blocks",
