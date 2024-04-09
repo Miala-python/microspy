@@ -69,6 +69,17 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
         } else if (bt_reçu.includes("off")) {
             dtc_on = false
         }
+    } else if (bt_reçu.includes("capt")) {
+        bluetooth.uartWriteLine("IR    : " + pins.digitalReadPin(DigitalPin.P8))
+        bluetooth.uartWriteLine("Light : " + pins.analogReadPin(AnalogPin.P3))
+        bluetooth.uartWriteLine("L-OK  : " + light_OK)
+        bluetooth.uartWriteLine("Sonar : " + sonar.ping(
+        DigitalPin.P2,
+        DigitalPin.P1,
+        PingUnit.Centimeters
+        ))
+        bluetooth.uartWriteLine("S-OK  : " + dist_OK)
+        bluetooth.uartWriteLine("Volume: " + input.soundLevel())
     }
 })
 // 1; 2 => Ultrasonic Module
@@ -107,7 +118,7 @@ basic.forever(function () {
     if (dtc_on) {
         if (1 == pins.digitalReadPin(DigitalPin.P8)) {
             dected_("IR")
-        } else if (Math.abs(light_OK - pins.analogReadPin(AnalogPin.P3)) > 300) {
+        } else if (pins.analogReadPin(AnalogPin.P3) < 5 != light_OK < 5) {
             dected_("Light")
         } else {
             dist = sonar.ping(
@@ -123,6 +134,7 @@ basic.forever(function () {
 })
 basic.forever(function () {
     if (!(dtc.isEmpty())) {
+        dtc = ""
         music.play(music.stringPlayable("C5 A E B E A F C5 ", 350), music.PlaybackMode.UntilDone)
         basic.pause(100)
         if (music.volume() < 25) {
