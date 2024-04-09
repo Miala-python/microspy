@@ -1,10 +1,25 @@
-function Intrusion (Detecteur: string) {
-    bluetooth.uartWriteLine("INTRUSION: " + Detecteur)
-    son_à_stopper_ = true
+input.onSound(DetectedSound.Loud, function () {
+    if (dtc_on) {
+        dected_("Microphone")
+    }
+})
+// start
+function dtc_reset () {
+    dist_OK = sonar.ping(
+    DigitalPin.P2,
+    DigitalPin.P1,
+    PingUnit.Centimeters
+    )
+    dtc_on = true
+}
+function dected_ (val: string) {
+    bluetooth.uartWriteLine("INTRUSION " + val)
+    dtc = val
+    basic.pause(500)
 }
 input.onButtonPressed(Button.AB, function () {
     music.stopAllSounds()
-    detect = false
+    dtc_on = false
     basic.pause(10000)
     music.play(music.builtinPlayableSoundEffect(soundExpression.hello), music.PlaybackMode.UntilDone)
     dist_OK = sonar.ping(
@@ -12,12 +27,21 @@ input.onButtonPressed(Button.AB, function () {
     DigitalPin.P1,
     PingUnit.Centimeters
     )
-    detect = true
+    dtc_on = true
+})
+input.onLogoEvent(TouchButtonEvent.Pressed, function () {
+    dtc_on = false
+    music.play(music.stringPlayable("A C - - - - - - ", 200), music.PlaybackMode.UntilDone)
+    basic.pause(10000)
+    dtc_reset()
+    music.play(music.stringPlayable("C A - - - - - - ", 200), music.PlaybackMode.UntilDone)
 })
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
     bt_reçu = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
-    bluetooth.uartWriteLine("CHECKED: " + "Monde")
+    bluetooth.uartWriteLine("CHECKED: " + bt_reçu)
     if (bt_reçu.includes("mus")) {
+        music.setVolume(255)
+        music.setTempo(100)
         music.play(music.tonePlayable(262, music.beat(BeatFraction.Double)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(196, music.beat(BeatFraction.Whole)), music.PlaybackMode.UntilDone)
         music.play(music.tonePlayable(262, music.beat(BeatFraction.Quarter)), music.PlaybackMode.UntilDone)
@@ -27,52 +51,45 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
         music.play(music.tonePlayable(392, music.beat(BeatFraction.Breve)), music.PlaybackMode.UntilDone)
     } else if (bt_reçu.includes("dtc")) {
         if (bt_reçu.includes("on")) {
-            detect = true
+            dtc_on = true
         } else if (bt_reçu.includes("off")) {
-            detect = false
-        }
-    } else if (bt_reçu.includes("rec")) {
-        if (bt_reçu.includes("on")) {
-            record.startRecording(record.BlockingState.Blocking)
-        } else if (bt_reçu.includes("play")) {
-            record.playAudio(record.BlockingState.Blocking)
+            dtc_on = false
         }
     }
 })
-// 8 => PIR Motion Sensor
 // 1; 2 => Ultrasonic Module
+// 8 => PIR Motion Sensor
 let dist = 0
 let bt_reçu = ""
-let son_à_stopper_ = false
+let dtc = ""
 let dist_OK = 0
-let detect = false
-detect = false
-bluetooth.startUartService()
+let dtc_on = false
+input.setSoundThreshold(SoundThreshold.Loud, 200)
+dtc_on = false
+dist_OK = 0
 let bt_i = 0
-led.enable(false)
-pins.digitalWritePin(DigitalPin.P8, 0)
-music._playDefaultBackground(music.builtInPlayableMelody(Melodies.PowerUp), music.PlaybackMode.UntilDone)
+dtc = ""
+bluetooth.startUartService()
+led.enable(true)
+basic.showLeds(`
+    # . . . #
+    # # . # #
+    # . # . #
+    # . . . #
+    # . . . #
+    `)
 basic.pause(2000)
-music.play(music.builtinPlayableSoundEffect(soundExpression.hello), music.PlaybackMode.UntilDone)
-detect = true
-dist_OK = sonar.ping(
-DigitalPin.P2,
-DigitalPin.P1,
-PingUnit.Centimeters
-)
+led.enable(false)
+dtc_reset()
 loops.everyInterval(10000, function () {
-    bt_i += 1
+    bt_i += 10
     bluetooth.uartWriteNumber(bt_i)
-    bluetooth.uartWriteLine("")
+    bluetooth.uartWriteLine("s started")
 })
 basic.forever(function () {
-    if (detect) {
-        if (music.volume() < 255) {
-            music.setVolume(music.volume() + 25)
-        }
+    if (dtc_on) {
         if (1 == pins.digitalReadPin(DigitalPin.P8)) {
-            music.play(music.stringPlayable("E B E A E G E F ", 200), music.PlaybackMode.UntilDone)
-            Intrusion("Mouvement IR")
+            dected_("IR")
         } else {
             dist = sonar.ping(
             DigitalPin.P2,
@@ -80,17 +97,19 @@ basic.forever(function () {
             PingUnit.Centimeters
             )
             if (dist > 10 && dist < 400 && 10 < Math.abs(dist_OK - dist)) {
-                music.play(music.stringPlayable("B A C5 A B C5 B A ", 200), music.PlaybackMode.UntilDone)
-                Intrusion("Sonar")
-            } else {
-                music.setVolume(105)
+                dected_("Sonar")
             }
         }
     }
 })
-loops.everyInterval(5000, function () {
-    if (son_à_stopper_) {
-        music.stopAllSounds()
-        son_à_stopper_ = false
+basic.forever(function () {
+    if (!(dtc.isEmpty())) {
+        music.play(music.stringPlayable("C5 A E B E A F C5 ", 350), music.PlaybackMode.UntilDone)
+        basic.pause(100)
+        if (music.volume() < 25) {
+            music.setVolume(music.volume() + 25)
+        }
+    } else {
+        music.setVolume(105)
     }
 })
