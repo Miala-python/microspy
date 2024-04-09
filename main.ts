@@ -1,6 +1,6 @@
 input.onSound(DetectedSound.Loud, function () {
     if (dtc_on) {
-        dected_("Microphone")
+        dected_("Microphone:" + input.soundLevel())
     }
 })
 // start
@@ -18,6 +18,13 @@ function dected_ (val: string) {
     dtc = val
     basic.pause(500)
 }
+function Au_sercours_ (Ahhh: string) {
+    dected_("Au secours: " + Ahhh)
+    music.play(music.createSoundExpression(WaveShape.Square, 2779, 5000, 255, 255, 500, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.UntilDone)
+    music.ringTone(2000)
+    music.play(music.createSoundExpression(WaveShape.Noise, 2779, 5000, 255, 255, 5000, SoundExpressionEffect.Warble, InterpolationCurve.Logarithmic), music.PlaybackMode.UntilDone)
+    music.stopAllSounds()
+}
 input.onButtonPressed(Button.AB, function () {
     music.stopAllSounds()
     dtc_on = false
@@ -30,12 +37,18 @@ input.onButtonPressed(Button.AB, function () {
     )
     dtc_on = true
 })
+input.onGesture(Gesture.Shake, function () {
+    Au_sercours_("Secoue")
+})
 input.onLogoEvent(TouchButtonEvent.Pressed, function () {
     dtc_on = false
     music.play(music.stringPlayable("A C - - - - - - ", 200), music.PlaybackMode.UntilDone)
     basic.pause(10000)
     dtc_reset()
     music.play(music.stringPlayable("C A - - - - - - ", 200), music.PlaybackMode.UntilDone)
+})
+input.onGesture(Gesture.ThreeG, function () {
+    Au_sercours_("Force:3g")
 })
 bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () {
     bt_reçu = bluetooth.uartReadUntil(serial.delimiters(Delimiters.NewLine))
