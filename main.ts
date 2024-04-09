@@ -5,6 +5,7 @@ input.onSound(DetectedSound.Loud, function () {
 })
 // start
 function dtc_reset () {
+    light_OK = pins.analogReadPin(AnalogPin.P3)
     dist_OK = sonar.ping(
     DigitalPin.P2,
     DigitalPin.P1,
@@ -51,22 +52,25 @@ bluetooth.onUartDataReceived(serial.delimiters(Delimiters.NewLine), function () 
         music.play(music.tonePlayable(392, music.beat(BeatFraction.Breve)), music.PlaybackMode.UntilDone)
     } else if (bt_reçu.includes("dtc")) {
         if (bt_reçu.includes("on")) {
-            dtc_on = true
+            dtc_reset()
         } else if (bt_reçu.includes("off")) {
             dtc_on = false
         }
     }
 })
 // 1; 2 => Ultrasonic Module
+// 3 => TEMT6000 Ambient Light Sensor
 // 8 => PIR Motion Sensor
 let dist = 0
 let bt_reçu = ""
 let dtc = ""
+let light_OK = 0
 let dist_OK = 0
 let dtc_on = false
 input.setSoundThreshold(SoundThreshold.Loud, 200)
 dtc_on = false
 dist_OK = 0
+light_OK = 0
 let bt_i = 0
 dtc = ""
 bluetooth.startUartService()
@@ -90,6 +94,8 @@ basic.forever(function () {
     if (dtc_on) {
         if (1 == pins.digitalReadPin(DigitalPin.P8)) {
             dected_("IR")
+        } else if (Math.abs(light_OK - pins.analogReadPin(AnalogPin.P3)) > 300) {
+            dected_("Light")
         } else {
             dist = sonar.ping(
             DigitalPin.P2,
